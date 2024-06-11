@@ -9,6 +9,12 @@ npm install
 configure util.js - [mongo, smtp]
 npm run start
 ```
+## Mongo Relationships
+```code
+'nameofProperty$collectionName' : { _id : ObjectId('66688b55ba788aee601025e0') }
+
+Will populate the referencing collection by ID
+```
 
 ## Client SDK : javascript, typescript, dart
 ```code
