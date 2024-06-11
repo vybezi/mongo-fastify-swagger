@@ -1,6 +1,6 @@
-import  { account,form, upload,wipay,product,order,events } from "backend-api"
 import   util  from './util.js'; 
-
+import  { account,form, upload,wipay,product,order,events } from "backend-api"
+import feature from './feature/index.js';
 //Util
 new util().then( async(util)=>{
   
@@ -12,6 +12,9 @@ new wipay(util)
 new product(util)
 new order(util)
 new events()?.route(util)
+
+//Feature
+new feature(util)
 
 
 try {
