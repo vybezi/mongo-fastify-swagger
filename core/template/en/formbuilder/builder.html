@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tag -->
+  <meta charset="utf-8">
+  <title>formBuilder Create</title>
+</head>
+
+<body>
+
+  <div style="overflow: auto; height:300px">
+    <label for="title" class="formbuilder-text-label">Forms</label>
+    <ul id="forms"></ul>
+  </div>
+
+  <div>
+    <label for="title" class="formbuilder-text-label">Title</label>
+    <input type="text" name="user-content-title" id="user-content-title">
+  </div>
+
+  <div>
+    <label for="authkey" class="formbuilder-text-label">authkey</label>
+    <input type="text" name="authkey" id="authkey" onchange="auth(this.value)">
+  </div>
+  <div id="fb-editor"></div>
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rateYo/2.3.2/jquery.rateyo.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/rateYo/2.3.2/jquery.rateyo.min.js"></script>
+  <script src="https://formbuilder.online/assets/js/form-builder.min.js"></script>
+  <script>
+    function auth(value) {
+      localStorage.setItem("authkey", value);
+    }
+
+    function get_auth(key) {
+      return localStorage.getItem(key);
+    }
+    document.getElementById('authkey').value = get_auth("authkey")
+
+
+    jQuery(async function ($) {
+
+
+      var fbTemplate = document.getElementById('fb-editor')
+
+      let customfields = [{
+    label: 'Signature',
+    attrs: {
+      type: 'signature'
+    },
+    icon: '&#9998;'
+  },{
+    label: 'Rating',
+    attrs: {
+      type: 'rating'
+    },
+    icon: '🌟'
+  }];
+  
+  let customTemplates = {
+    signature: function(fieldData) {
+      return {
+        field: '<div><input class="form-control" value="'+(fieldData.value ? fieldData.value : "")+'" id="'+fieldData.id+'" name="'+fieldData.name+'" type="hidden" /> <canvas style="padding:5px;outline: black 3px solid;" id="_'+fieldData.id+'"></canvas></div>',
+        onRender: function() {
+          var signaturePad = new SignaturePad(document.getElementById( `_${fieldData.name}`) );
+         if(fieldData.userData) signaturePad.fromData(JSON.parse(fieldData.userData));
+          signaturePad.addEventListener("endStroke",(signature)=>{
+            document.getElementById(fieldData.name).setAttribute("value", JSON.stringify(signaturePad.toData()))
+          })
+        }
+      };
+    },
+    rating: function(fieldData) {
+      return {
+        field: '<div><input class="form-control" value="'+(fieldData.value ? fieldData.value : "")+'" id="'+fieldData.id+'" name="'+fieldData.name+'"  type="hidden" /> <span id="_'+fieldData.id+'"></div>',
+        onRender: function() {        
+          var rate = $(document.getElementById(`_${fieldData.name}`)).rateYo(fieldData.userData ? JSON.parse(fieldData.userData) : {});
+              rate.on("rateyo.set", function (e, data) { 
+                document.getElementById(fieldData.name).setAttribute("value", JSON.stringify(data))
+              });
+        }
+      };
+    }
+    
+  };
+
+      var options = {
+        formData: {},
+        fields: customfields,
+        templates: customTemplates,
+        onSave: function (evt, _formData) {
+
+          if (!document.getElementById('user-content-title').value || !document.getElementById('authkey').value) {
+            alert("missing title/authkey")
+            return false
+          }
+
+          $.ajax({
+            url: '/form/create',
+            type: 'PUT',
+            contentType: "application/json",
+            headers: { "Authorization": `Bearer ${get_auth('authkey')}` },
+            data: JSON.stringify({
+              'title': document.getElementById('user-content-title').value,
+              'data': { "form": _formData }
+            }),
+            success: function (result) {
+              // Do something with the result 
+              fb.actions.clearFields()
+              document.getElementById('user-content-title').value = ""
+
+              alert(JSON.stringify(result))
+
+            }
+          });
+
+        }
+      }
+
+      var fb = $(fbTemplate).formBuilder(options);
+
+      var forms = await $.ajax({
+        url: '/form',
+        type: 'GET',
+        contentType: "application/json",
+        headers: { "Authorization": `Bearer ${get_auth('authkey')}` }
+      });
+
+      forms.forEach((form) => {
+
+        let a = document.createElement('a');
+        let li = document.createElement('li');
+
+        a.href = '/formbuilder/' + form._id;
+        a.innerText = form?.title + " |" + form?._id;
+        li.appendChild(a)
+
+        document.getElementById('forms').appendChild(li)
+
+
+      });
+
+    });
+
+  </script>
+</body>
+
+</html>
