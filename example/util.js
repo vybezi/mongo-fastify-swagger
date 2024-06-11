@@ -40,8 +40,8 @@ export default class util {
     await fastify.register(import('@fastify/swagger'), {
       openapi: {
         info: {
-          title: 'INeutral',
-          description: 'testing the fastify swagger api',
+          title: 'Feaure Example API Platform',
+          description: 'Testing Feaure Example API Platform',
           version: '0.1.0'
         },
         components: {
@@ -98,13 +98,15 @@ export default class util {
       parts: 1000         // For multipart forms, the max number of parts (fields + files)
     })
 
+
+    const dbName = 'default'
     const mongo = 'mongodb://root:secret@localhost:32769/' //local
-    const ORM = await mongoose.connect(mongo, { dbName: "default" })
+    const ORM = await mongoose.connect(mongo, { dbName: dbName})
     await fastify.register(import('@fastify/mongodb'), {
       forceClose: true,
       url: mongo
     })
-    const DB = await fastify.mongo.client.db('default')
+    const DB = await fastify.mongo.client.db(dbName)
 
     await fastify.register(import('@fastify/auth')).decorate('authenticate', function (request, reply, done) {
       if (request.headers.authorization) {
